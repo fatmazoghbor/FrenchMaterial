@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>French Flashcards</title>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:wght@600&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f6f7fa;--card:#ffffff;--ink:#14213d;--muted:#5b6478;--line:#dde1ea;--blue:#1d3f8f;--red:#c8323c;--tint:#e9eefb;--green:#1e8a5f;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0f1524;--card:#172037;--ink:#eef1f8;--muted:#a3adc4;--line:#2a3550;--blue:#8fb0ff;--red:#ff7a84;--tint:#1e2a4a;--green:#5fd6a6}}
+:root[data-theme="dark"]{--bg:#0f1524;--card:#172037;--ink:#eef1f8;--muted:#a3adc4;--line:#2a3550;--blue:#8fb0ff;--red:#ff7a84;--tint:#1e2a4a;--green:#5fd6a6}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 "DM Sans",system-ui,sans-serif;display:flex;flex-direction:column}
+header{padding:18px 20px 8px;text-align:center}
+h1{font-family:"Newsreader",Georgia,serif;font-size:1.7rem;margin:0}
+.sub{color:var(--muted);font-size:.9rem;margin-top:4px}
+main{flex:1;max-width:520px;width:100%;margin:0 auto;padding:10px 18px 40px;display:flex;flex-direction:column;align-items:center}
+.decks{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:10px 0 18px}
+.deckbtn{border:1px solid var(--line);background:var(--card);color:var(--ink);padding:8px 14px;border-radius:20px;font:600 .85rem "DM Sans";cursor:pointer}
+.deckbtn.active{background:var(--blue);border-color:var(--blue);color:#fff}
+.deckbtn.locked{opacity:.5;cursor:not-allowed}
+.unlockBar{width:100%;background:var(--tint);border-radius:10px;padding:10px 14px;margin-bottom:14px;font-size:.85rem;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.unlockBar button{border:none;background:var(--blue);color:#fff;font:600 .8rem "DM Sans";padding:7px 12px;border-radius:8px;cursor:pointer;white-space:nowrap}
+.progress{width:100%;font-size:.8rem;color:var(--muted);display:flex;justify-content:space-between;margin-bottom:8px}
+.stage{width:100%;perspective:1200px;height:230px;margin-bottom:18px}
+.card{position:relative;width:100%;height:100%;border-radius:16px;cursor:pointer;transform-style:preserve-3d;transition:transform .45s}
+.card.flipped{transform:rotateY(180deg)}
+.face{position:absolute;inset:0;border-radius:16px;background:var(--card);border:1px solid var(--line);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:20px;backface-visibility:hidden}
+.face.back{transform:rotateY(180deg);background:var(--tint)}
+.tag{font-size:.75rem;color:var(--blue);font-weight:700;text-transform:uppercase;letter-spacing:.04em;margin-bottom:10px}
+.word{font-family:"Newsreader",Georgia,serif;font-size:1.9rem;font-weight:600}
+.hint{font-size:.8rem;color:var(--muted);margin-top:14px}
+.controls{display:flex;gap:10px;width:100%;justify-content:center;margin-bottom:14px;flex-wrap:wrap}
+button.act{border:none;border-radius:10px;padding:11px 16px;font:600 .9rem "DM Sans";cursor:pointer}
+.nav{background:var(--tint);color:var(--ink)}
+.dont{background:var(--red);color:#fff}
+.know{background:var(--green);color:#fff}
+.reset{background:transparent;color:var(--muted);text-decoration:underline;border:none;font:500 .8rem "DM Sans";cursor:pointer;margin-top:6px}
+footer{text-align:center;color:var(--muted);font-size:.8rem;padding:6px 0 18px}
+@media(max-width:400px){.word{font-size:1.5rem}.stage{height:200px}}
+</style>
+</head>
+<body>
+<header>
+<h1>🇫🇷 French Flashcards</h1>
+<div class="sub" id="deckName">Loading…</div>
+</header>
+<main>
+<div class="decks" id="deckBar"></div>
+<div class="unlockBar" id="unlockBar" style="display:none"></div>
+<div class="progress"><span id="posLabel">–</span><span id="knownLabel">Known: 0</span></div>
+<div class="stage"><div class="card" id="card">
+  <div class="face front"><div class="tag">Français</div><div class="word" id="fr"></div><div class="hint">Tap to flip</div></div>
+  <div class="face back"><div class="tag">English</div><div class="word" id="en"></div></div>
+</div></div>
+<div class="controls">
+  <button class="act nav" id="prev">◀ Prev</button>
+  <button class="act dont" id="dontKnow">Don't know yet</button>
+  <button class="act know" id="knowIt">I know this ✓</button>
+  <button class="act nav" id="next">Next ▶</button>
+</div>
+<button class="reset" id="shuffleBtn">🔀 Shuffle deck</button>
+<button class="reset" id="resetBtn">Reset progress for this deck</button>
+</main>
+<footer>Card flips on tap or spacebar · ← → to move</footer>
+<script>
+const DECKS = {
+  "Lesson 1": [
+    ["Bonjour","Hello (daytime)"],["Bonsoir","Good evening"],["Salut","Hi (informal)"],
+    ["Au revoir","Goodbye"],["À bientôt","See you soon"],["Bonne nuit","Good night"],
+    ["Merci","Thank you"],["S'il vous plaît","Please"],["De rien","You're welcome"],
+    ["Excusez-moi","Excuse me"],["Comment ça va ?","How are you?"],["Ça va bien, merci","I'm fine, thanks"],
+    ["Je m'appelle…","My name is…"],["J'ai … ans","I am … years old"],["Je suis de…","I am from…"],
+    ["J'habite à…","I live in…"],["Enchanté(e)","Nice to meet you"],
+    ["Je ne comprends pas","I don't understand"],["Répétez, s'il vous plaît","Repeat, please"],
+    ["Plus lentement","More slowly"],["Comment dit-on… ?","How do you say…?"],["Comment ça s'écrit ?","How do you spell it?"]
+  ],
+  "Lesson 2": [
+    ["le père","the father"],["la mère","the mother"],["le frère","the brother"],["la sœur","the sister"],
+    ["le fils","the son"],["la fille","the daughter"],["les parents","the parents"],
+    ["le mari","the husband"],["la femme","the wife"],["le grand-père","the grandfather"],["la grand-mère","the grandmother"],
+    ["vingt","twenty"],["trente","thirty"],["quarante","forty"],["cinquante","fifty"],["soixante","sixty"],
+    ["soixante-dix","seventy"],["quatre-vingts","eighty"],["quatre-vingt-dix","ninety"],["cent","one hundred"],
+    ["grand / grande","tall"],["petit / petite","small"],["content / contente","happy"],
+    ["intelligent / intelligente","smart"],["beau / belle","handsome / beautiful"],["gentil / gentille","kind"]
+  ],
+  "Lesson 3": [
+    ["parler","to speak"],["aimer","to like / love"],["habiter","to live"],["travailler","to work"],
+    ["manger","to eat"],["écouter","to listen"],["regarder","to watch"],["jouer","to play"],
+    ["étudier","to study"],["chercher","to look for"],["arriver","to arrive"],
+    ["et","and"],["mais","but"],["aussi","also"],["parce que","because"],
+    ["Je ne … pas","I don't / not (negation)"],["Est-ce que…?","Is it that…? (question starter)"],
+    ["qui","who"],["que / qu'est-ce que","what"],["où","where"],["quand","when"],
+    ["comment","how"],["pourquoi","why"],["combien (de)","how much / how many"],
+    ["quel / quelle","which / what (agrees with the noun)"]
+  ],
+  "Lesson 4": [
+    ["finir","to finish"],["choisir","to choose"],["réfléchir","to think / reflect"],["grandir","to grow"],
+    ["réussir","to succeed"],["obéir","to obey"],["remplir","to fill"],["agir","to act"],
+    ["bâtir","to build"],["rougir","to blush"],
+    ["je finis","I finish"],["nous finissons","we finish"],["ils finissent","they finish"]
+  ],
+  "Lesson 5": [
+    ["vendre","to sell"],["attendre","to wait for"],["perdre","to lose"],["entendre","to hear"],
+    ["répondre","to answer"],["descendre","to go down / get off"],["rendre","to give back"],
+    ["faire","to do / make"],["faire du sport","to play sports"],["faire les courses","to go grocery shopping"],
+    ["faire la cuisine","to cook"],["il fait beau","the weather is nice"],["il fait froid","it's cold"],
+    ["Quelle heure est-il ?","What time is it?"],["Il est ... heure(s)","It is ... o'clock"],
+    ["et quart","quarter past"],["et demie","half past"],["moins le quart","quarter to"],
+    ["midi","noon"],["minuit","midnight"],["du matin","in the morning (am)"],
+    ["de l'après-midi","in the afternoon (pm)"],["du soir","in the evening (pm)"]
+  ],
+  "Lesson 6": [
+    ["aller","to go"],["je vais","I go / I'm going"],["tu vas","you go"],["il / elle va","he / she goes"],
+    ["nous allons","we go"],["vous allez","you go"],["ils / elles vont","they go"],
+    ["aller + infinitif","going to… (near future)"],["aller au cinéma","to go to the cinema"],
+    ["aller à l'école","to go to school"],["demain","tomorrow"],["la semaine prochaine","next week"]
+  ],
+  "Lesson 7": [
+    ["vouloir","to want"],["je veux","I want"],["je voudrais","I would like (polite)"],
+    ["pouvoir","to be able to / can"],["je peux","I can"],["pouvez-vous… ?","can you…? (formal)"],
+    ["devoir","to have to / must"],["je dois","I must"],["tu dois…","you must…"]
+  ],
+  "Lesson 8": [
+    ["prendre","to take"],["je prends","I take"],["venir","to come"],["je viens","I come"],
+    ["voir","to see"],["je vois","I see"],["savoir","to know (a fact)"],["je sais","I know"],
+    ["connaître","to know (a person/place)"],["je connais","I know (him/it)"]
+  ],
+  "Lesson 9": [
+    ["j'ai parlé","I spoke"],["j'ai fini","I finished"],["j'ai vendu","I sold"],["j'ai fait","I did / made"],
+    ["j'ai pris","I took"],["j'ai vu","I saw"],["hier","yesterday"],["la semaine dernière","last week"],
+    ["déjà","already"],["avant","before"]
+  ],
+  "Lesson 10": [
+    ["je suis allé(e)","I went"],["je suis venu(e)","I came"],["je suis parti(e)","I left"],
+    ["je suis arrivé(e)","I arrived"],["je me suis levé(e)","I got up"],["je me suis couché(e)","I went to bed"],
+    ["je me suis lavé(e)","I washed (myself)"],["je me suis habillé(e)","I got dressed"],
+    ["ce matin","this morning"],["hier soir","last night"]
+  ],
+  "Lesson 11": [
+    ["j'étais","I was"],["j'avais","I had"],["je faisais","I was doing / making"],
+    ["je parlais","I was speaking / used to speak"],["quand j'étais petit(e)","when I was little"],
+    ["tous les jours","every day"],["autrefois","in the past"],["il y avait","there was / were"]
+  ],
+  "Lesson 12": [
+    ["je pense que…","I think that…"],["à mon avis…","in my opinion…"],["je suis d'accord","I agree"],
+    ["je ne suis pas d'accord","I disagree"],["c'est vrai","that's true"],["peut-être","maybe"],
+    ["pourriez-vous… ?","could you…? (formal)"],["je voudrais…","I would like…"]
+  ]
+};
+const ALL_KEY = "All lessons";
+let order = Object.keys(DECKS);
+let current = ALL_KEY;
+let idx = 0, flipped = false, cards = [];
+
+const LOCK_KEY = "fr_course_unlocks";
+function getCompleted(){
+  try{ const v = JSON.parse(localStorage.getItem(LOCK_KEY)); if(Array.isArray(v)) return v; }catch(e){}
+  return [1]; // default: Homework 1 done, so Lesson 2 deck is unlocked
+}
+function setCompleted(arr){ try{ localStorage.setItem(LOCK_KEY, JSON.stringify(arr)); }catch(e){} }
+function lessonNum(name){ const m = name.match(/^Lesson (\d+)$/); return m ? parseInt(m[1],10) : null; }
+function isUnlocked(name){
+  const n = lessonNum(name); if(n===null) return true; // non-lesson decks (shouldn't occur)
+  if(n===1) return true;
+  return getCompleted().includes(n-1);
+}
+function unlockedDeckNames(){ return order.filter(isUnlocked); }
+
+function buildDeckBar(){
+  const bar = document.getElementById('deckBar'); bar.innerHTML='';
+  [ALL_KEY, ...order].forEach(name=>{
+    const unlocked = name===ALL_KEY || isUnlocked(name);
+    const b = document.createElement('button');
+    b.className = 'deckbtn' + (name===current?' active':'') + (unlocked?'':' locked');
+    b.textContent = unlocked ? name : ('🔒 '+name);
+    if(unlocked){ b.onclick = ()=>{ current=name; loadDeck(); buildDeckBar(); }; }
+    else { b.disabled = true; b.title = 'Locked until the previous lesson\'s homework is marked done'; }
+    bar.appendChild(b);
+  });
+}
+function renderUnlockBar(){
+  const bar = document.getElementById('unlockBar');
+  const n = lessonNum(current);
+  const completed = getCompleted();
+  if(n===null){ bar.style.display='none'; return; }
+  bar.style.display='flex';
+  if(completed.includes(n)){
+    bar.innerHTML = `<span>✅ Lesson ${n} homework marked done.</span>`;
+    const undo = document.createElement('button');
+    undo.textContent = 'Undo';
+    undo.style.background = 'transparent'; undo.style.color = 'var(--muted)'; undo.style.textDecoration='underline';
+    undo.onclick = ()=>{ setCompleted(getCompleted().filter(x=>x!==n)); renderUnlockBar(); buildDeckBar(); };
+    bar.appendChild(undo);
+  } else {
+    bar.innerHTML = `<span>Mark Lesson ${n} homework complete to unlock Lesson ${n+1}.</span>`;
+    const btn = document.createElement('button');
+    btn.textContent = `Mark HW ${n} done`;
+    btn.onclick = ()=>{ const c=getCompleted(); if(!c.includes(n)) c.push(n); setCompleted(c); renderUnlockBar(); buildDeckBar(); };
+    bar.appendChild(btn);
+  }
+}
+function getStore(){
+  try{ return JSON.parse(localStorage.getItem('fr_flash_progress')||'{}'); }catch(e){ return {}; }
+}
+function setStore(s){ try{ localStorage.setItem('fr_flash_progress', JSON.stringify(s)); }catch(e){} }
+function keyFor(deck,word){ return deck+'::'+word; }
+
+function loadDeck(){
+  if(current!==ALL_KEY && !isUnlocked(current)) current = ALL_KEY; // guard against a stale locked selection
+  cards = current===ALL_KEY
+    ? unlockedDeckNames().flatMap(d=>DECKS[d].map(c=>({fr:c[0],en:c[1],deck:d})))
+    : DECKS[current].map(c=>({fr:c[0],en:c[1],deck:current}));
+  idx = 0; flipped = false;
+  document.getElementById('deckName').textContent = current + ' · ' + cards.length + ' cards';
+  renderUnlockBar();
+  render();
+}
+function render(){
+  if(!cards.length) return;
+  const c = cards[idx];
+  document.getElementById('fr').textContent = c.fr;
+  document.getElementById('en').textContent = c.en;
+  document.getElementById('card').classList.toggle('flipped', flipped);
+  document.getElementById('posLabel').textContent = (idx+1)+' / '+cards.length;
+  const store = getStore();
+  const known = cards.filter(x=>store[keyFor(x.deck,x.fr)]).length;
+  document.getElementById('knownLabel').textContent = 'Known: '+known+' / '+cards.length;
+}
+function flip(){ flipped=!flipped; render(); }
+function move(d){ idx=(idx+d+cards.length)%cards.length; flipped=false; render(); }
+function mark(known){
+  const c = cards[idx]; const store = getStore();
+  store[keyFor(c.deck,c.fr)] = known; setStore(store);
+  move(1);
+}
+function shuffle(){
+  for(let i=cards.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [cards[i],cards[j]]=[cards[j],cards[i]]; }
+  idx=0; flipped=false; render();
+}
+document.getElementById('card').addEventListener('click', flip);
+document.getElementById('prev').onclick = ()=>move(-1);
+document.getElementById('next').onclick = ()=>move(1);
+document.getElementById('dontKnow').onclick = ()=>mark(false);
+document.getElementById('knowIt').onclick = ()=>mark(true);
+document.getElementById('shuffleBtn').onclick = shuffle;
+document.getElementById('resetBtn').onclick = ()=>{
+  const store = getStore();
+  cards.forEach(c=>{ delete store[keyFor(c.deck,c.fr)]; });
+  setStore(store); render();
+};
+document.addEventListener('keydown', e=>{
+  if(e.code==='Space'){ e.preventDefault(); flip(); }
+  if(e.code==='ArrowRight') move(1);
+  if(e.code==='ArrowLeft') move(-1);
+});
+buildDeckBar();
+loadDeck();
+</script>
+</body>
+</html>
