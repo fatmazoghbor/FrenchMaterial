@@ -31,7 +31,10 @@ main{flex:1;max-width:520px;width:100%;margin:0 auto;padding:10px 18px 40px;disp
 .face.back{transform:rotateY(180deg);background:var(--tint)}
 .tag{font-size:.75rem;color:var(--blue);font-weight:700;text-transform:uppercase;letter-spacing:.04em;margin-bottom:10px}
 .word{font-family:"Newsreader",Georgia,serif;font-size:1.9rem;font-weight:600}
-.hint{font-size:.8rem;color:var(--muted);margin-top:14px}
+.audio-btn{margin-top:10px;background:var(--tint);border:1px solid var(--line);color:var(--blue);border-radius:50%;width:38px;height:38px;display:inline-flex;align-items:center;justify-content:center;font-size:1rem;cursor:pointer;transition:transform .1s, background-color .2s}
+.audio-btn:hover{background:var(--card);transform:scale(1.08)}
+.audio-btn:active{transform:scale(0.95)}
+.hint{font-size:.8rem;color:var(--muted);margin-top:10px}
 .controls{display:flex;gap:10px;width:100%;justify-content:center;margin-bottom:14px;flex-wrap:wrap}
 button.act{border:none;border-radius:10px;padding:11px 16px;font:600 .9rem "DM Sans";cursor:pointer}
 .nav{background:var(--tint);color:var(--ink)}
@@ -52,8 +55,16 @@ footer{text-align:center;color:var(--muted);font-size:.8rem;padding:6px 0 18px}
 <div class="unlockBar" id="unlockBar" style="display:none"></div>
 <div class="progress"><span id="posLabel">–</span><span id="knownLabel">Known: 0</span></div>
 <div class="stage"><div class="card" id="card">
-  <div class="face front"><div class="tag">Français</div><div class="word" id="fr"></div><div class="hint">Tap to flip</div></div>
-  <div class="face back"><div class="tag">English</div><div class="word" id="en"></div></div>
+  <div class="face front">
+    <div class="tag">Français</div>
+    <div class="word" id="fr"></div>
+    <button class="audio-btn" id="audioBtn" title="Listen to pronunciation">🔊</button>
+    <div class="hint">Tap to flip</div>
+  </div>
+  <div class="face back">
+    <div class="tag">English</div>
+    <div class="word" id="en"></div>
+  </div>
 </div></div>
 <div class="controls">
   <button class="act nav" id="prev">◀ Prev</button>
@@ -64,7 +75,7 @@ footer{text-align:center;color:var(--muted);font-size:.8rem;padding:6px 0 18px}
 <button class="reset" id="shuffleBtn">🔀 Shuffle deck</button>
 <button class="reset" id="resetBtn">Reset progress for this deck</button>
 </main>
-<footer>Card flips on tap or spacebar · ← → to move</footer>
+<footer>Card flips on tap or spacebar · Press 'A' for audio · ← → to move</footer>
 <script>
 const DECKS = {
   "Lesson 1": [
@@ -158,12 +169,12 @@ let idx = 0, flipped = false, cards = [];
 const LOCK_KEY = "fr_course_unlocks";
 function getCompleted(){
   try{ const v = JSON.parse(localStorage.getItem(LOCK_KEY)); if(Array.isArray(v)) return v; }catch(e){}
-  return [1]; // default: Homework 1 done, so Lesson 2 deck is unlocked
+  return [1];
 }
 function setCompleted(arr){ try{ localStorage.setItem(LOCK_KEY, JSON.stringify(arr)); }catch(e){} }
 function lessonNum(name){ const m = name.match(/^Lesson (\d+)$/); return m ? parseInt(m[1],10) : null; }
 function isUnlocked(name){
-  const n = lessonNum(name); if(n===null) return true; // non-lesson decks (shouldn't occur)
+  const n = lessonNum(name); if(n===null) return true;
   if(n===1) return true;
   return getCompleted().includes(n-1);
 }
@@ -209,7 +220,7 @@ function setStore(s){ try{ localStorage.setItem('fr_flash_progress', JSON.string
 function keyFor(deck,word){ return deck+'::'+word; }
 
 function loadDeck(){
-  if(current!==ALL_KEY && !isUnlocked(current)) current = ALL_KEY; // guard against a stale locked selection
+  if(current!==ALL_KEY && !isUnlocked(current)) current = ALL_KEY;
   cards = current===ALL_KEY
     ? unlockedDeckNames().flatMap(d=>DECKS[d].map(c=>({fr:c[0],en:c[1],deck:d})))
     : DECKS[current].map(c=>({fr:c[0],en:c[1],deck:current}));
@@ -229,6 +240,28 @@ function render(){
   const known = cards.filter(x=>store[keyFor(x.deck,x.fr)]).length;
   document.getElementById('knownLabel').textContent = 'Known: '+known+' / '+cards.length;
 }
+
+// Audio Pronunciation Engine
+function speakWord(text) {
+  if (!('speechSynthesis' in window)) {
+    alert('Audio pronunciation is not supported in this browser.');
+    return;
+  }
+  window.speechSynthesis.cancel(); // Stop any active speech
+  
+  // Clean string for speech engine (remove trailing dots, slashes, parenthetical options)
+  const cleanText = text.replace(/…|\.\.\./g, '').replace(/\//g, ' ou ');
+  const utterance = new SpeechSynthesisUtterance(cleanText);
+  utterance.lang = 'fr-FR';
+  utterance.rate = 0.9; // Slightly slower for clarity
+  
+  const voices = window.speechSynthesis.getVoices();
+  const frVoice = voices.find(v => v.lang.startsWith('fr'));
+  if (frVoice) utterance.voice = frVoice;
+  
+  window.speechSynthesis.speak(utterance);
+}
+
 function flip(){ flipped=!flipped; render(); }
 function move(d){ idx=(idx+d+cards.length)%cards.length; flipped=false; render(); }
 function mark(known){
@@ -240,7 +273,13 @@ function shuffle(){
   for(let i=cards.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [cards[i],cards[j]]=[cards[j],cards[i]]; }
   idx=0; flipped=false; render();
 }
+
 document.getElementById('card').addEventListener('click', flip);
+document.getElementById('audioBtn').addEventListener('click', (e) => {
+  e.stopPropagation(); // Stop card from flipping when audio is clicked
+  if (cards.length) speakWord(cards[idx].fr);
+});
+
 document.getElementById('prev').onclick = ()=>move(-1);
 document.getElementById('next').onclick = ()=>move(1);
 document.getElementById('dontKnow').onclick = ()=>mark(false);
@@ -255,7 +294,13 @@ document.addEventListener('keydown', e=>{
   if(e.code==='Space'){ e.preventDefault(); flip(); }
   if(e.code==='ArrowRight') move(1);
   if(e.code==='ArrowLeft') move(-1);
+  if(e.key.toLowerCase()==='a') speakWord(cards[idx].fr); // Press 'A' shortcut for audio
 });
+
+if ('speechSynthesis' in window) {
+  window.speechSynthesis.onvoiceschanged = () => window.speechSynthesis.getVoices();
+}
+
 buildDeckBar();
 loadDeck();
 </script>
