@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>French Flashcards</title>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:wght@600&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f6f7fa;--card:#ffffff;--ink:#14213d;--muted:#5b6478;--line:#dde1ea;--blue:#1d3f8f;--red:#c8323c;--tint:#e9eefb;--green:#1e8a5f;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0f1524;--card:#172037;--ink:#eef1f8;--muted:#a3adc4;--line:#2a3550;--blue:#8fb0ff;--red:#ff7a84;--tint:#1e2a4a;--green:#5fd6a6}}
+:root[data-theme="dark"]{--bg:#0f1524;--card:#172037;--ink:#eef1f8;--muted:#a3adc4;--line:#2a3550;--blue:#8fb0ff;--red:#ff7a84;--tint:#1e2a4a;--green:#5fd6a6}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 "DM Sans",system-ui,sans-serif;display:flex;flex-direction:column}
+header{padding:18px 20px 8px;text-align:center}
+h1{font-family:"Newsreader",Georgia,serif;font-size:1.7rem;margin:0}
+.sub{color:var(--muted);font-size:.9rem;margin-top:4px}
+main{flex:1;max-width:520px;width:100%;margin:0 auto;padding:10px 18px 40px;display:flex;flex-direction:column;align-items:center}
+.decks{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:10px 0 18px}
+.deckbtn{border:1px solid var(--line);background:var(--card);color:var(--ink);padding:8px 14px;border-radius:20px;font:600 .85rem "DM Sans";cursor:pointer}
+.deckbtn.active{background:var(--blue);border-color:var(--blue);color:#fff}
+.deckbtn.locked{opacity:.5;cursor:not-allowed}
+.unlockBar{width:100%;background:var(--tint);border-radius:10px;padding:10px 14px;margin-bottom:14px;font-size:.85rem;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.unlockBar button{border:none;background:var(--blue);color:#fff;font:600 .8rem "DM Sans";padding:7px 12px;border-radius:8px;cursor:pointer;white-space:nowrap}
+.progress{width:100%;font-size:.8rem;color:var(--muted);display:flex;justify-content:space-between;margin-bottom:8px}
+.stage{width:100%;perspective:1200px;height:230px;margin-bottom:18px}
+.card{position:relative;width:100%;height:100%;border-radius:16px;cursor:pointer;transform-style:preserve-3d;transition:transform .45s}
+.card.flipped{transform:rotateY(180deg)}
+.face{position:absolute;inset:0;border-radius:16px;background:var(--card);border:1px solid var(--line);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:20px;backface-visibility:hidden}
+.face.back{transform:rotateY(180deg);background:var(--tint)}
+.tag{font-size:.75rem;color:var(--blue);font-weight:700;text-transform:uppercase;letter-spacing:.04em;margin-bottom:10px}
+.word{font-family:"Newsreader",Georgia,serif;font-size:1.9rem;font-weight:600}
+.audio-btn{margin-top:10px;background:var(--tint);border:1px solid var(--line);color:var(--blue);border-radius:50%;width:38px;height:38px;display:inline-flex;align-items:center;justify-content:center;font-size:1rem;cursor:pointer;transition:transform .1s, background-color .2s}
+.audio-btn:hover{background:var(--card);transform:scale(1.08)}
+.audio-btn:active{transform:scale(0.95)}
+.hint{font-size:.8rem;color:var(--muted);margin-top:10px}
+.controls{display:flex;gap:10px;width:100%;justify-content:center;margin-bottom:14px;flex-wrap:wrap}
+button.act{border:none;border-radius:10px;padding:11px 16px;font:600 .9rem "DM Sans";cursor:pointer}
+.nav{background:var(--tint);color:var(--ink)}
+.dont{background:var(--red);color:#fff}
+.know{background:var(--green);color:#fff}
+.reset{background:transparent;color:var(--muted);text-decoration:underline;border:none;font:500 .8rem "DM Sans";cursor:pointer;margin-top:6px}
+footer{text-align:center;color:var(--muted);font-size:.8rem;padding:6px 0 18px}
+@media(max-width:400px){.word{font-size:1.5rem}.stage{height:200px}}
+</style>
+</head>
+<body>
+<header>
+<h1>🇫🇷 French Flashcards</h1>
+<div class="sub" id="deckName">Loading…</div>
+</header>
+<main>
+<div class="decks" id="deckBar"></div>
+<div class="unlockBar" id="unlockBar" style="display:none"></div>
+<div class="progress"><span id="posLabel">–</span><span id="knownLabel">Known: 0</span></div>
+<div class="stage"><div class="card" id="card">
+  <div class="face front">
+    <div class="tag">Français</div>
+    <div class="word" id="fr"></div>
+    <button class="audio-btn" id="audioBtn" title="Listen to pronunciation">🔊</button>
+    <div class="hint">Tap to flip</div>
+  </div>
+  <div class="face back">
+    <div class="tag">English</div>
+    <div class="word" id="en"></div>
+  </div>
+</div></div>
+<div class="controls">
+  <button class="act nav" id="prev">◀ Prev</button>
+  <button class="act dont" id="dontKnow">Don't know yet</button>
+  <button class="act know" id="knowIt">I know this ✓</button>
+  <button class="act nav" id="next">Next ▶</button>
+</div>
+<button class="reset" id="shuffleBtn">🔀 Shuffle deck</button>
+<button class="reset" id="resetBtn">Reset progress for this deck</button>
+</main>
+<footer>Card flips on tap or spacebar · Press 'A' for audio · ← → to move</footer>
+<script>
+const DECKS = {
+  "Lesson 1": [
+    ["Bonjour","Hello (daytime)"],["Bonsoir","Good evening"],["Salut","Hi (informal)"],
+    ["Au revoir","Goodbye"],["À bientôt","See you soon"],["Bonne nuit","Good night"],
+    ["Merci","Thank you"],["S'il vous plaît","Please"],["De rien","You're welcome"],
+    ["Excusez-moi","Excuse me"],["Comment ça va ?","How are you?"],["Ça va bien, merci","I'm fine, thanks"],
+    ["Je m'appelle…","My name is…"],["J'ai … ans","I am … years old"],["Je suis de…","I am from…"],
+    ["J'habite à…","I live in…"],["Enchanté(e)","Nice to meet you"],
+    ["Je ne comprends pas","I don't understand"],["Répétez, s'il vous plaît","Repeat, please"],
+    ["Plus lentement","More slowly"],["Comment dit-on… ?","How do you say…?"],["Comment ça s'écrit ?","How do you spell it?"]
+  ],
+  "Lesson 2": [
+    ["le père","the father"],["la mère","the mother"],["le frère","the brother"],["la sœur","the sister"],
+    ["le fils","the son"],["la fille","the daughter"],["les parents","the parents"],
+    ["le mari","the husband"],["la femme","the wife"],["le grand-père","the grandfather"],["la grand-mère","the grandmother"],
+    ["vingt","twenty"],["trente","thirty"],["quarante","forty"],["cinquante","fifty"],["soixante","sixty"],
+    ["soixante-dix","seventy"],["quatre-vingts","eighty"],["quatre-vingt-dix","ninety"],["cent","one hundred"],
+    ["grand / grande","tall"],["petit / petite","small"],["content / contente","happy"],
+    ["intelligent / intelligente","smart"],["beau / belle","handsome / beautiful"],["gentil / gentille","kind"]
+  ],
+  "Lesson 3": [
+    ["parler","to speak"],["aimer","to like / love"],["habiter","to live"],["travailler","to work"],
+    ["manger","to eat (nous mangeons)"],["écouter","to listen"],["regarder","to watch"],["jouer","to play"],
+    ["étudier","to study"],["chercher","to look for"],["arriver","to arrive"],
+    ["et","and"],["mais","but"],["aussi","also"],["parce que","because"],
+    ["ne ... pas","not (negation pattern: ne + verb + pas)"],["Est-ce que… ?","Do you…? (question starter)"],
+    ["qui","who"],["que / qu'est-ce que","what"],["où","where"],["quand","when"],
+    ["comment","how"],["pourquoi","why"],["combien (de)","how much / how many"],
+    ["quel / quelle / quels / quelles","which / what (agrees with noun)"]
+  ],
+  "Lesson 4": [
+    ["finir","to finish"],["choisir","to choose"],["réfléchir","to think / reflect"],["grandir","to grow"],
+    ["réussir","to succeed"],["obéir","to obey"],["remplir","to fill"],["agir","to act"],
+    ["bâtir","to build"],["rougir","to blush"],
+    ["je finis","I finish"],["nous finissons","we finish"],["ils finissent","they finish"],
+    ["lundi","Monday"],["mardi","Tuesday"],["mercredi","Wednesday"],["jeudi","Thursday"],
+    ["vendredi","Friday"],["samedi","Saturday"],["dimanche","Sunday"],
+    ["janvier","January"],["février","February"],["mars","March"],["avril","April"],
+    ["mai","May"],["juin","June"],["juillet","July"],["août","August"],
+    ["septembre","September"],["octobre","October"],["novembre","November"],["décembre","December"],
+    ["lundi (no article)","this coming Monday / on Monday"],["le lundi","every Monday"],
+    ["le week-end","the weekend"],["Quel jour sommes-nous ?","What day is it?"],
+    ["Quelle est la date ?","What's the date?"],["le premier mai","the 1st of May"],
+    ["en janvier / au mois de mai","in January / in the month of May"],
+    ["le matin","the morning"],["je me réveille","I wake up"],["je me lève","I get up"],
+    ["je me lave","I wash"],["je m'habille","I get dressed"],["je me brosse les dents","I brush my teeth"],
+    ["je prépare mon café","I make my coffee"],["je choisis mes vêtements","I choose my clothes"],
+    ["je finis mon café","I finish my coffee"],["je réfléchis à ma journée","I think about my day"],
+    ["je remplis mon sac","I fill my bag"],["je finis de me préparer","I finish getting ready"],
+    ["je mange mon petit-déjeuner","I eat my breakfast"],["je quitte la maison","I leave the house"]
+  ],
+  "Lesson 5": [
+    ["ne … jamais","never (ne + verb + jamais)"],
+    ["jamais !","never! (one-word answer)"],
+    ["je ne vends jamais","I never sell"],["tu ne réponds jamais","you never answer"],
+    ["il n'attend jamais","he never waits (ne → n' before a vowel)"],
+    ["nous ne perdons jamais","we never lose"],["vous ne faites jamais","you never do / make"],
+    ["elles ne font jamais","they never do / make"],
+    ["Je ne fais jamais le ménage.","I never do the housework."],
+    ["Je ne mange jamais à minuit.","I never eat at midnight."],
+    ["Je ne fais jamais de sport.","I never play sports. (du → de after jamais)"],
+    ["Je n'ai jamais mangé de sushi.","I have never eaten sushi. (past tense)"]
+  ],
+  "Lesson 6": [
+    ["aller","to go"],["je vais","I go / I'm going"],["tu vas","you go / you're going"],
+    ["il / elle va","he / she goes"],["nous allons","we go / we're going"],
+    ["vous allez","you go / you're going (formal or plural)"],["ils / elles vont","they go / they're going"],
+    ["le futur proche","the near future"],["aller + infinitive","going to + verb"],
+    ["je vais étudier","I'm going to study"],["nous allons voyager","we're going to travel"],
+    ["demain","tomorrow"],["demain matin","tomorrow morning"],["ce soir","this evening / tonight"],
+    ["bientôt","soon"],["la semaine prochaine","next week"],["ce week-end","this weekend"],
+    ["à l'école","to school"],["au cinéma","to the cinema (à + le)"],
+    ["à la piscine","to the pool"],["aux toilettes","to the toilets (à + les)"],
+    ["à l'hôpital","to the hospital (à l' before a vowel sound)"],
+    ["au marché","to the market"],["chez le médecin","to the doctor's"],
+    ["à la maison","home / to the house"],["au travail","to work"],
+    ["Qu'est-ce que tu vas faire ce week-end ?","What are you going to do this weekend?"],
+    ["Où est-ce que tu vas aller demain ?","Where are you going to go tomorrow?"]
+  ],
+  "Lesson 7": [
+    ["vouloir","to want"],["je veux","I want"],["tu veux","you want"],["il / elle veut","he / she wants"],
+    ["nous voulons","we want"],["vous voulez","you want (formal or plural)"],["ils / elles veulent","they want"],
+    ["je voudrais","I would like (polite)"],["pouvoir","can / to be able to"],
+    ["je peux","I can"],["tu peux","you can"],["il / elle peut","he / she can"],
+    ["nous pouvons","we can"],["vous pouvez","you can (formal or plural)"],["ils / elles peuvent","they can"],
+    ["devoir","must / to have to"],["je dois","I must / I have to"],["tu dois","you must / you have to"],
+    ["il / elle doit","he / she must"],["nous devons","we must / we have to"],
+    ["vous devez","you must (formal or plural)"],["ils / elles doivent","they must"],
+    ["je voudrais un café","I would like a coffee"],["Pouvez-vous répéter ?","Could you repeat?"],
+    ["Est-ce que je peux… ?","May I…? / Can I…?"],["Je dois partir.","I have to leave."],
+    ["réserver une table","to book a table"],["l'addition","the bill"],["un croissant","a croissant"],
+    ["voir","to see"],["je vois","I see"],["savoir","to know a fact / how to do something"],
+    ["je sais parler français","I know how to speak French"],["recevoir","to receive"],
+    ["je reçois un message","I receive a message"],["prévoir","to plan / expect"],
+    ["nous prévoyons un voyage","we are planning a trip"],["falloir","to be necessary; must"],
+    ["il faut + infinitive","it is necessary to / you have to"],["Il faut réserver une table.","You have to book a table."]
+  ],
+  "Lesson 8": [
+    ["prendre","to take"],["je prends","I take"],["tu prends","you take"],["il / elle prend","he / she takes"],
+    ["nous prenons","we take"],["vous prenez","you take (formal or plural)"],["ils / elles prennent","they take"],
+    ["prendre le bus","to take the bus"],["prendre le train","to take the train"],
+    ["prendre des photos","to take photos"],["venir","to come"],
+    ["je viens","I come"],["tu viens","you come"],["il / elle vient","he / she comes"],
+    ["nous venons","we come"],["vous venez","you come (formal or plural)"],["ils / elles viennent","they come"],
+    ["venir de + infinitive","to have just done something"],["Je viens d'arriver.","I just arrived."],
+    ["voir","to see"],["je vois","I see"],["tu vois","you see"],["il / elle voit","he / she sees"],
+    ["nous voyons","we see"],["vous voyez","you see (formal or plural)"],["ils / elles voient","they see"],
+    ["savoir","to know a fact / how to do something"],["je sais","I know (a fact / how to)"],
+    ["Tu sais où est la gare ?","Do you know where the station is?"],
+    ["connaître","to know / be familiar with a person or place"],["je connais","I know / I'm familiar with"],
+    ["Tu connais ce restaurant ?","Do you know this restaurant?"],
+    ["la gare","the train station"],["Comment tu viens au travail ?","How do you get to work?"],
+    ["Tu viens d'où ?","Where are you coming from?"]
+  ]
+};
+const ALL_KEY = "All lessons";
+let order = Object.keys(DECKS);
+let current = ALL_KEY;
+let idx = 0, flipped = false, cards = [];
+
+const LOCK_KEY = "fr_course_unlocks";
+function getCompleted(){
+  try{ const v = JSON.parse(localStorage.getItem(LOCK_KEY)); if(Array.isArray(v)) return v; }catch(e){}
+  return [1]; // default: Homework 1 done, so Lesson 2 deck is unlocked
+}
+function setCompleted(arr){ try{ localStorage.setItem(LOCK_KEY, JSON.stringify(arr)); }catch(e){} }
+function lessonNum(name){ const m = name.match(/^Lesson (\d+)$/); return m ? parseInt(m[1],10) : null; }
+function isUnlocked(name){
+  const n = lessonNum(name); if(n===null) return true; // non-lesson decks (shouldn't occur)
+  if(n===1) return true;
+  return getCompleted().includes(n-1);
+}
+function unlockedDeckNames(){ return order.filter(isUnlocked); }
+
+function buildDeckBar(){
+  const bar = document.getElementById('deckBar'); bar.innerHTML='';
+  [ALL_KEY, ...order].forEach(name=>{
+    const unlocked = name===ALL_KEY || isUnlocked(name);
+    const b = document.createElement('button');
+    b.className = 'deckbtn' + (name===current?' active':'') + (unlocked?'':' locked');
+    b.textContent = unlocked ? name : ('🔒 '+name);
+    if(unlocked){ b.onclick = ()=>{ current=name; loadDeck(); buildDeckBar(); }; }
+    else { b.disabled = true; b.title = 'Locked until the previous lesson\'s homework is marked done'; }
+    bar.appendChild(b);
+  });
+}
+function renderUnlockBar(){
+  const bar = document.getElementById('unlockBar');
+  const n = lessonNum(current);
+  const completed = getCompleted();
+  if(n===null || !DECKS['Lesson '+(n+1)]){ bar.style.display='none'; return; } // no next lesson to unlock
+  bar.style.display='flex';
+  if(completed.includes(n)){
+    bar.innerHTML = `<span>✅ Lesson ${n} homework marked done.</span>`;
+    const undo = document.createElement('button');
+    undo.textContent = 'Undo';
+    undo.style.background = 'transparent'; undo.style.color = 'var(--muted)'; undo.style.textDecoration='underline';
+    undo.onclick = ()=>{ setCompleted(getCompleted().filter(x=>x!==n)); renderUnlockBar(); buildDeckBar(); };
+    bar.appendChild(undo);
+  } else {
+    bar.innerHTML = `<span>Mark Lesson ${n} homework complete to unlock Lesson ${n+1}.</span>`;
+    const btn = document.createElement('button');
+    btn.textContent = `Mark HW ${n} done`;
+    btn.onclick = ()=>{ const c=getCompleted(); if(!c.includes(n)) c.push(n); setCompleted(c); renderUnlockBar(); buildDeckBar(); };
+    bar.appendChild(btn);
+  }
+}
+function getStore(){
+  try{ return JSON.parse(localStorage.getItem('fr_flash_progress')||'{}'); }catch(e){ return {}; }
+}
+function setStore(s){ try{ localStorage.setItem('fr_flash_progress', JSON.stringify(s)); }catch(e){} }
+function keyFor(deck,word){ return deck+'::'+word; }
+
+function loadDeck(){
+  if(current!==ALL_KEY && !isUnlocked(current)) current = ALL_KEY; // guard against a stale locked selection
+  cards = current===ALL_KEY
+    ? unlockedDeckNames().flatMap(d=>DECKS[d].map(c=>({fr:c[0],en:c[1],deck:d})))
+    : DECKS[current].map(c=>({fr:c[0],en:c[1],deck:current}));
+  idx = 0; flipped = false;
+  document.getElementById('deckName').textContent = current + ' · ' + cards.length + ' cards';
+  renderUnlockBar();
+  render();
+}
+function render(){
+  if(!cards.length) return;
+  const c = cards[idx];
+  document.getElementById('fr').textContent = c.fr;
+  document.getElementById('en').textContent = c.en;
+  document.getElementById('card').classList.toggle('flipped', flipped);
+  document.getElementById('posLabel').textContent = (idx+1)+' / '+cards.length;
+  const store = getStore();
+  const known = cards.filter(x=>store[keyFor(x.deck,x.fr)]).length;
+  document.getElementById('knownLabel').textContent = 'Known: '+known+' / '+cards.length;
+}
+// Audio pronunciation
+function speakWord(text){
+  if(!('speechSynthesis' in window)){ alert('Audio pronunciation is not supported in this browser.'); return; }
+  window.speechSynthesis.cancel();
+  const cleanText = text.replace(/…|\.\.\./g,'').replace(/\//g,' ou ');
+  const utterance = new SpeechSynthesisUtterance(cleanText);
+  utterance.lang = 'fr-FR';
+  utterance.rate = 0.9;
+  const frVoice = window.speechSynthesis.getVoices().find(v=>v.lang.startsWith('fr'));
+  if(frVoice) utterance.voice = frVoice;
+  window.speechSynthesis.speak(utterance);
+}
+function flip(){ flipped=!flipped; render(); }
+function move(d){ idx=(idx+d+cards.length)%cards.length; flipped=false; render(); }
+function mark(known){
+  const c = cards[idx]; const store = getStore();
+  store[keyFor(c.deck,c.fr)] = known; setStore(store);
+  move(1);
+}
+function shuffle(){
+  for(let i=cards.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [cards[i],cards[j]]=[cards[j],cards[i]]; }
+  idx=0; flipped=false; render();
+}
+document.getElementById('card').addEventListener('click', flip);
+document.getElementById('audioBtn').addEventListener('click', e=>{
+  e.stopPropagation(); // don't flip the card
+  if(cards.length) speakWord(cards[idx].fr);
+});
+document.getElementById('prev').onclick = ()=>move(-1);
+document.getElementById('next').onclick = ()=>move(1);
+document.getElementById('dontKnow').onclick = ()=>mark(false);
+document.getElementById('knowIt').onclick = ()=>mark(true);
+document.getElementById('shuffleBtn').onclick = shuffle;
+document.getElementById('resetBtn').onclick = ()=>{
+  const store = getStore();
+  cards.forEach(c=>{ delete store[keyFor(c.deck,c.fr)]; });
+  setStore(store); render();
+};
+document.addEventListener('keydown', e=>{
+  if(e.code==='Space'){ e.preventDefault(); flip(); }
+  if(e.code==='ArrowRight') move(1);
+  if(e.code==='ArrowLeft') move(-1);
+  if(e.key.toLowerCase()==='a' && cards.length) speakWord(cards[idx].fr);
+});
+if('speechSynthesis' in window){ window.speechSynthesis.onvoiceschanged = ()=>window.speechSynthesis.getVoices(); }
+buildDeckBar();
+loadDeck();
+</script>
+</body>
+</html>
