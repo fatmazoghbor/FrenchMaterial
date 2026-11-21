@@ -139,6 +139,57 @@ const DECKS = {
     ["Je ne mange jamais à minuit.","I never eat at midnight."],
     ["Je ne fais jamais de sport.","I never play sports. (du → de after jamais)"],
     ["Je n'ai jamais mangé de sushi.","I have never eaten sushi. (past tense)"]
+  ],
+  "Lesson 6": [
+    ["aller","to go"],["je vais","I go / I'm going"],["tu vas","you go / you're going"],
+    ["il / elle va","he / she goes"],["nous allons","we go / we're going"],
+    ["vous allez","you go / you're going (formal or plural)"],["ils / elles vont","they go / they're going"],
+    ["le futur proche","the near future"],["aller + infinitive","going to + verb"],
+    ["je vais étudier","I'm going to study"],["nous allons voyager","we're going to travel"],
+    ["demain","tomorrow"],["demain matin","tomorrow morning"],["ce soir","this evening / tonight"],
+    ["bientôt","soon"],["la semaine prochaine","next week"],["ce week-end","this weekend"],
+    ["à l'école","to school"],["au cinéma","to the cinema (à + le)"],
+    ["à la piscine","to the pool"],["aux toilettes","to the toilets (à + les)"],
+    ["à l'hôpital","to the hospital (à l' before a vowel sound)"],
+    ["au marché","to the market"],["chez le médecin","to the doctor's"],
+    ["à la maison","home / to the house"],["au travail","to work"],
+    ["Qu'est-ce que tu vas faire ce week-end ?","What are you going to do this weekend?"],
+    ["Où est-ce que tu vas aller demain ?","Where are you going to go tomorrow?"]
+  ],
+  "Lesson 7": [
+    ["vouloir","to want"],["je veux","I want"],["tu veux","you want"],["il / elle veut","he / she wants"],
+    ["nous voulons","we want"],["vous voulez","you want (formal or plural)"],["ils / elles veulent","they want"],
+    ["je voudrais","I would like (polite)"],["pouvoir","can / to be able to"],
+    ["je peux","I can"],["tu peux","you can"],["il / elle peut","he / she can"],
+    ["nous pouvons","we can"],["vous pouvez","you can (formal or plural)"],["ils / elles peuvent","they can"],
+    ["devoir","must / to have to"],["je dois","I must / I have to"],["tu dois","you must / you have to"],
+    ["il / elle doit","he / she must"],["nous devons","we must / we have to"],
+    ["vous devez","you must (formal or plural)"],["ils / elles doivent","they must"],
+    ["je voudrais un café","I would like a coffee"],["Pouvez-vous répéter ?","Could you repeat?"],
+    ["Est-ce que je peux… ?","May I…? / Can I…?"],["Je dois partir.","I have to leave."],
+    ["réserver une table","to book a table"],["l'addition","the bill"],["un croissant","a croissant"],
+    ["voir","to see"],["je vois","I see"],["savoir","to know a fact / how to do something"],
+    ["je sais parler français","I know how to speak French"],["recevoir","to receive"],
+    ["je reçois un message","I receive a message"],["prévoir","to plan / expect"],
+    ["nous prévoyons un voyage","we are planning a trip"],["falloir","to be necessary; must"],
+    ["il faut + infinitive","it is necessary to / you have to"],["Il faut réserver une table.","You have to book a table."]
+  ],
+  "Lesson 8": [
+    ["prendre","to take"],["je prends","I take"],["tu prends","you take"],["il / elle prend","he / she takes"],
+    ["nous prenons","we take"],["vous prenez","you take (formal or plural)"],["ils / elles prennent","they take"],
+    ["prendre le bus","to take the bus"],["prendre le train","to take the train"],
+    ["prendre des photos","to take photos"],["venir","to come"],
+    ["je viens","I come"],["tu viens","you come"],["il / elle vient","he / she comes"],
+    ["nous venons","we come"],["vous venez","you come (formal or plural)"],["ils / elles viennent","they come"],
+    ["venir de + infinitive","to have just done something"],["Je viens d'arriver.","I just arrived."],
+    ["voir","to see"],["je vois","I see"],["tu vois","you see"],["il / elle voit","he / she sees"],
+    ["nous voyons","we see"],["vous voyez","you see (formal or plural)"],["ils / elles voient","they see"],
+    ["savoir","to know a fact / how to do something"],["je sais","I know (a fact / how to)"],
+    ["Tu sais où est la gare ?","Do you know where the station is?"],
+    ["connaître","to know / be familiar with a person or place"],["je connais","I know / I'm familiar with"],
+    ["Tu connais ce restaurant ?","Do you know this restaurant?"],
+    ["la gare","the train station"],["Comment tu viens au travail ?","How do you get to work?"],
+    ["Tu viens d'où ?","Where are you coming from?"]
   ]
 };
 const ALL_KEY = "All lessons";
@@ -168,7 +219,7 @@ function buildDeckBar(){
     b.className = 'deckbtn' + (name===current?' active':'') + (unlocked?'':' locked');
     b.textContent = unlocked ? name : ('🔒 '+name);
     if(unlocked){ b.onclick = ()=>{ current=name; loadDeck(); buildDeckBar(); }; }
-    else { b.disabled = true; b.title = 'Locked until the previous lesson\'s homework is marked done'; }
+    else { b.disabled = true; b.title = 'Locked until the previous lesson\\'s homework is marked done'; }
     bar.appendChild(b);
   });
 }
@@ -224,7 +275,7 @@ function render(){
 function speakWord(text){
   if(!('speechSynthesis' in window)){ alert('Audio pronunciation is not supported in this browser.'); return; }
   window.speechSynthesis.cancel();
-  const cleanText = text.replace(/…|\.\.\./g,'').replace(/\//g,' ou ');
+  const cleanText = text.replace(/…|\\.\\.\\./g,'').replace(/\\//g,' ou ');
   const utterance = new SpeechSynthesisUtterance(cleanText);
   utterance.lang = 'fr-FR';
   utterance.rate = 0.9;
